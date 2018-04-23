@@ -1,0 +1,55 @@
+---
+output:
+  title: "Whatever"
+  html_notebook:
+    toc: yes
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(here)
+theme_set(theme_bw())
+```
+
+
+Todas as séries presentes no dataset:
+
+```{r}
+series = read_csv(here("data/series_from_imdb.csv"),
+                  progress = FALSE,
+                  col_types = cols(.default = col_double(),
+                                   series_name = col_character(),
+                                   episode = col_character(), 
+                                   url = col_character(),
+                                   season = col_character()))
+series = unique(series[,1])
+print(series)
+```
+
+```{r}
+series_c = read_csv(here("data/series_from_imdb.csv"),
+                  progress = FALSE,
+                  col_types = cols(.default = col_double(),
+                                   series_name = col_character(),
+                                   episode = col_character(), 
+                                   url = col_character(),
+                                   season = col_character()))
+
+series_c = series_c %>% filter(series_name %in% c("Breaking Bad", "True Detective", "Black Mirror", "Stranger Things"))
+```
+
+```{r}
+
+
+series_c %>% 
+  group_by(series_name) %>%
+  ggplot(aes(x = series_name, y = user_rating, color = series_name)) + 
+  geom_line() + 
+  geom_point() 
+```
+
