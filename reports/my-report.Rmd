@@ -1,7 +1,6 @@
 ---
-title: "Whatever"
-
 output:
+  title: "Whatever"
   html_notebook:
     toc: yes
     toc_float: yes
@@ -14,155 +13,160 @@ output:
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(here)
+library(knitr)
 theme_set(theme_bw())
 ```
+# 1. Introdução
 
-O dataset tinha informa??es sobre as series listadas abaixo.
+O problema a ser descrito a seguir diz respeito a avaliações de séries feitas por usuários do IMDB. O dataset sobre o qual as estatísticas contidas neste documento foram calculadas apresenta o seguinte cabeçalho:
 
 ```{r}
-series = read_csv(here("data/series_from_imdb.csv"),
-                  progress = FALSE,
-                  col_types = cols(.default = col_double(),
-                                   series_name = col_character(),
-                                   episode = col_character(), 
-                                   url = col_character(),
-                                   season = col_character()))
-print(unique(series[,1]))
+eps = read_csv(here("data/series_from_imdb.csv"),
+               progress = FALSE,
+               col_types = cols(.default = col_double(),
+               series_name = col_character(),
+               episode = col_character(), 
+               url = col_character(),
+               season = col_character()))
+
+print(colnames(eps))
+```
+
+O dataset tinha informações sobre as series listadas abaixo.
+
+```{r}
+knitr::kable(unique(select(eps, series_name)), floating.environment="sidewaystable")
 ```
 
 Destas, foram escolhidas 4 a serem usadas para responder as seguintes perguntas:
 
-1) Qual das s?ries ? mais bem avaliada no IMDB? A diferen?a ? grande? Pequena? Muda de acordo com as temporadas da s?rie?
-2) Qual das s?ries tem epis?dios de qualidade mais irregular segundo o IMDB? A diferen?a ? grande? Pequena?
+1) Qual das séries é mais bem avaliada no IMDB? A diferença é grande? Pequena? Muda de acordo com as temporadas da série?
+2) Qual das séries tem episódios de qualidade mais irregular segundo o IMDB? A diferença é grande? Pequena?
 
-As series escolhidas foram:
+As séries escolhidas foram:
 ```{r}
-selected_series = series %>% filter(series_name %in% c("Black Mirror", "Breaking Bad", "Stranger Things", "True Detective"))
-
-print(unique(selected_series[,1]))
+selected_eps = eps %>% filter(series_name %in% c("Black Mirror", "Breaking Bad", "Stranger Things", "True Detective"))
+knitr::kable(unique(select(selected_eps, series_name)), floating.environment="sidewaystable")
 ```
 
-. Overview dos dados
+# 2. Overview dos dados
 
-Sobre Breaking Bad:
+Esta sessão apresenta alguns dados gerais a respeito das séries selecionadas.
+
+## 2.1 Dados
+
+Todo o conjunto de dados a ser analisado:
 ```{r}
-breaking_bad_eps = selected_series %>% filter(series_name %in% c("Breaking Bad"))
-
-s1 = summarise(breaking_bad_eps %>% group_by(season), media = mean(user_rating), desvio = sd(user_rating))
-
-print (s1)
-
-s1 %>% 
-  ggplot(aes(x = season, y = media)) + 
-  geom_line() + 
-  geom_point()
-
-breaking_bad_eps %>% 
-  ggplot(aes(x = season, y = user_rating)) + 
-    geom_boxplot(width = .5, outlier.color = NA) +
-    stat_summary(fun.y=mean, colour="darkred", geom="point", 
-               shape=18, size=3, show.legend = FALSE) +
-    geom_jitter(width = .1, size = 2, alpha = .5, color = "blue")
-    
+knitr::kable(select(selected_eps, series_name, season, series_ep, user_rating, user_votes), floating.environment="sidewaystable")
 ```
 
+## 2.2 Boxplots
+
 ```{r}
-black_mirror_eps = selected_series %>% filter(series_name %in% c("Black Mirror"))
-
-s2 = summarise(black_mirror_eps %>% group_by(season), media = mean(user_rating), desvio = sd(user_rating))
-
-print (s2)
-
-s2 %>% 
-  ggplot(aes(x = season, y = media)) + 
-  geom_line() + 
-  geom_point()
-
-black_mirror_eps %>% 
-  ggplot(aes(x = season, y = user_rating)) + 
-    geom_boxplot(width = .5, outlier.color = NA) +
-    stat_summary(fun.y=mean, colour="darkred", geom="point", 
-               shape=18, size=3, show.legend = FALSE) +
-    geom_jitter(width = .1, size = 2, alpha = .5, color = "blue")
-    
+selected_eps %>% 
+    ggplot(aes(x = season, y = user_rating, color = season)) + 
+    labs(x = "Temporada", y = "Avaliação dos usuários") +
+    geom_boxplot(width = .3, outlier.color = NA) +
+    geom_jitter(width = .1, size = 1, alpha = .5, color = "blue") +
+    facet_wrap(~ series_name, ncol = 1)
 ```
 
+## 2.2 Tabela de Dados Resumo
+
+Por Temporada:
 ```{r}
-stranger_things_eps = selected_series %>% filter(series_name %in% c("Stranger Things"))
-
-s3 = summarise(stranger_things_eps %>% group_by(season), media = mean(user_rating), desvio = sd(user_rating))
-
-print (s3)
-
-s3 %>% 
-  ggplot(aes(x = season, y = media)) + 
-  geom_line() + 
-  geom_point()
-
-stranger_things_eps %>% 
-  ggplot(aes(x = season, y = user_rating)) + 
-    geom_boxplot(width = .5, outlier.color = NA) +
-    stat_summary(fun.y=mean, colour="darkred", geom="point", 
-               shape=18, size=3, show.legend = FALSE) +
-    geom_jitter(width = .1, size = 2, alpha = .5, color = "blue")
-    
+summarise(selected_eps %>% group_by(series_name, season), mediana = median(user_rating), media = mean(user_rating), var = var(user_rating),
+                                    dp = sd(user_rating), cvar = (sd(user_rating) / mean(user_rating)), 
+                                    max = max(user_rating), min = min(user_rating))
 ```
 
 
+Por Série:
 ```{r}
-true_detective_eps = selected_series %>% filter(series_name %in% c("True Detective"))
+summarise(selected_eps %>% group_by(series_name), mediana = median(user_rating), media = mean(user_rating), var = var(user_rating),
+                                    dp = sd(user_rating), cvar = (sd(user_rating) / mean(user_rating)), 
+                                    max = max(user_rating), min = min(user_rating))
+```
 
-s4 = summarise(true_detective_eps %>% group_by(season), media = mean(user_rating), desvio = sd(user_rating))
+## 2.3 Notas por episódio
 
-print (s4)
-
-s4 %>% 
-  ggplot(aes(x = season, y = media)) + 
-  geom_line() + 
-  geom_point()
-
-true_detective_eps %>% 
-  ggplot(aes(x = season, y = user_rating)) + 
-    geom_boxplot(width = .5, outlier.color = NA) +
-    stat_summary(fun.y=mean, colour="darkred", geom="point", 
-               shape=18, size=3, show.legend = FALSE) +
-    geom_jitter(width = .1, size = 2, alpha = .5, color = "blue")
-    
+```{r}
+selected_eps %>% 
+    ggplot(aes(x = series_ep, y = user_rating, color = season)) +
+    labs(x = "Episódio", y = "Avaliação dos usuários") +
+    geom_line() + facet_wrap(~ series_name, ncol = 1) +
+    guides(color = guide_legend("Temporada")) +
+    geom_point()
 ```
 
 
+## 2.4 Análise do overview
+Observações que podem ser feitas a partir dos plots nas sessões 2.1, 2.2 e 2.3:
 
-1) A m?dia da avalia??o de todos os epis?dios de cada s?rie ser? usada para determinar a s?rie mais bem avaliada. A s?rie com a maior m?dia ? considerada a s?rie melhor avaliada.
+* Black mirror -  Apresenta uma grande variação de notas em episódios de uma mesma temporada (especialmente na segunda temporada). Isso se deve ao fato de não existir uma story line definida para uma temporada. Cada episódio tem o seu próprio elenco de atores, história e mundo. Isso também facilita grandes variações de notas.
+
+* Breaking Bad - É uma série que cresce ao longo das temporadas, sendo a última esmagadoramente melhor do que as outras. No geral, apresentou pouca irregularidade de nota, sendo as temporadas 3 e 4 as mais irregulares.
+
+* Stranger Things - A temporada pareceu ser bastante consistente em qualidade, pois houve pouca variação nos dados. Além disso, houve uma linearidade de variação crescente na reta final. Indicando que o final é muito bom (pelo menos para os usuários que avaliaram no IMDB). 
+
+* True Detective - Esta série tem uma história fechada por temporada. O que justifica a grande queda em notas da primeira para a segunda temporada. Tanto pelas médias das temporadas como pelo gráfico da sessão 2.3, podemos perceber o grande abismo entre as avaliações das duas temporadas.
+
+# 3. Resposta da pergunta um
+
+* Qual das séries é mais bem avaliada no IMDB? 
+Para responder a essa pergunta podemos calcular a média de todos os episódios de cada série. A que apresentar a maior média será considerada a melhor avaliada. Portanto:
+
+```{r}
+arrangedMeanTable = arrange(summarise(selected_eps %>% group_by(series_name), media = mean(user_rating), cvar = (sd(user_rating) / mean(user_rating))), -media)
+
+print(arrangedMeanTable)
+```
+
+Conclusão: A série mais bem avaliada é Breaking Bad. O coeficiente de variância é quase o dobro do de Stranger Things. Isso pode representar uma ameaça à representatividade da média, mas só há avaliação de uma temporada para esta, o que justifica o baixo coeficiente de variação. Todas as séries que apresentam mais de uma temporada acabam variando muito, pois novas temporadas implicam em novas histórias, personagens, elementos e novas dificuldades de produção.
+
+* A diferença é grande? Pequena? 
+
+A maior diferença apresentada foi de:
 
 ```{r}
 
-grouped_series = selected_series %>% group_by(series_name)
-
-
-summarise(grouped_series, media = mean(user_rating), desvio = sd(user_rating))
+print(max(select(arrangedMeanTable, media)) - min(select(arrangedMeanTable, media)))
 
 ```
-Conclus?o: Breaking Bad ? a melhor s?rie
+
+Tendo em vista que a escala vai de 0 a 10. Isso, a princípio, representa pouca diferença. Mas, se tomarmos como base as notas gerais que são apresentadas pelas séries no IMDB, essa variação é bastante considerável. Como foi visto na sessão 2.2 (coluna min), nenhum episódio ganhou notas abaixo de 7, é difícil que isso ocorra entre as séries no IMDB. Portanto, é uma grande diferença. 
+
+* Muda de acordo com as temporadas da série?
+
+Sim. Se fossemos analisar apenas a primeira temporada de True Detective, por exemplo, a série seria uma das melhores classificadas. Conforme pode ser visto na sessão 2.2, a média de 9.2 para a primeira temporada é a segunda melhor das temporadas de todas as séries, enquanto que a da segunda é a pior de todas. Esse também é o motivo do alto coeficiente de variação.
+
+Da mesma forma, a última temporada de Breaking Bad tem a maior nota de todas. Se fossemos levar em consideração essa temporada apenas a nota seria bem maior.
+
+
+# 4. Resposta da pergunta dois
+
+* Qual das séries tem episódios de qualidade mais irregular segundo o IMDB?
+
+Podemos medir isso através do coeficiente de variação. Ordenando as séries por esta métrica obtemos:
 
 ```{r}
-series_c = read_csv(here("data/series_from_imdb.csv"),
-                  progress = FALSE,
-                  col_types = cols(.default = col_double(),
-                                   series_name = col_character(),
-                                   episode = col_character(), 
-                                   url = col_character(),
-                                   season = col_character()))
+arrangedCvarTable = arrange(summarise(selected_eps %>% group_by(series_name), media = mean(user_rating), cvar = (sd(user_rating) / mean(user_rating))), -cvar)
 
-series_c = series_c %>% filter(series_name %in% c("Breaking Bad", "True Detective", "Black Mirror", "Stranger Things"))
+arrangedCvarTable
 ```
 
-```{r}
+Conclusão: True Detective é a série com maior variação entre os episódios. O motivo disso encontra-se explicado na sessão 2.4.
+
+* A diferença é grande? Pequena?
+
+A diferença é grande. Um coeficiente de variância de 7,4% pode ser um fator decisivo para a representatividade da média pelo mesmo motivo que foi explicado na sessão 3.
 
 
-series_c %>% 
-  group_by(series_name) %>%
-  ggplot(aes(x = series_name, y = user_rating, color = series_name)) + 
-  geom_line() + 
-  geom_point() 
-```
+# 5. Extra dois
+
+* Episódios no início/fim da temporada são mais bem avaliados que os no meio? O que tende a ser melhor? Inícios ou finais de séries/temporadas?
+
+Para responder a essa pergunta iremos utilizar o gráfico da sessão 2.3. Nele, podemos ver que quase sempre o fim da temporada (especialmente o último episódio) representa o ponto alto da temporada (a única exceção foi na segunda temporada de True Detective). Os do início, porém, não são tão bem avaliados quanto os do fim em geral.
+
+Portanto, finais de temporada tendem a ser melhores do que inícios de temporadas para a nossa amostra.
 
