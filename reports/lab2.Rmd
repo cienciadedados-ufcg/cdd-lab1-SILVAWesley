@@ -1,0 +1,88 @@
+---
+title: "lab2"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+
+```{r}
+install.packages("Hmisc")
+```
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(here)
+library(Hmisc)
+theme_set(theme_bw())
+```
+
+```{r}
+series = read_csv(here("data/series_from_imdb.csv"),
+                  progress = FALSE,
+                  col_types = cols(.default = col_double(),
+                                   series_name = col_character(),
+                                   episode = col_character(), 
+                                   url = col_character(),
+                                   season = col_character()))
+```
+
+Os dados de votação de séries dos usuários do imdb, os quais o script acima captura, serão usados para responder a duas perguntas formuladas em sala de aula.
+
+# 1. Existe correlação linear entre notas e quantidade de votantes?
+
+## 1.1. Hipótese 
+
+Existe uma correlação, não necessariamente linear, entre notas e quantidade de votantes, pois quanto menos votantes menos conhecida é a série, por ser menos conhecida, quem tem motivação de votar acaba gostando da série.
+
+## 1.2. Análise
+
+O script abaixo calcula a correlação linear entre a coluna user_votes (Referente a quantidade de votos de usuários) e a coluna user_rating (Referente a média da nota das avaliações) de cada episódio presente no dataframe.Utilizei 3 métodos: Spearman, pearson e kendall, nessa ordem.
+
+```{r}
+cor(series$user_votes, series$user_rating, method="spearman")
+cor(series$user_votes, series$user_rating, method="pearson")
+cor(series$user_votes, series$user_rating, method="kendall")
+```
+
+Pelo que podemos ver a correlação linear mais significativa é a de spearman que ainda assim configura uma correlação baixa. Para entender melhor a correlação irei plotar o gráfico de dispersão das duas variáveis.
+
+```{r}
+ggplot(series, aes(x=user_rating, y=user_votes)) + geom_point()
+
+```
+
+Como é possível observar, há alguns poucos pontos muito acima do normal em user_votes. Irei limitar o eixo y para 50000 votos. Assim, teremos um gráfico que pode ser melhor analisado.
+
+
+```{r}
+ggplot(series, aes(x=user_rating, y=user_votes)) + geom_point() + coord_cartesian(ylim = c(0, 50000)) 
+```
+
+Podemos ver que a maior parte dos episódios apresenta quantidade de vontantes abaixo de 10000. E não necessariamente é verdade que séries com poucos votos são melhor votadas. É mais fácil de acontecer o contrário, episódios muito votados apresentarem notas melhores. Isso explica porque nenhum dos 3 coeficientes deu valor negativo. Também podemos observar que a correlação é, no máximo, moderada entre as duas variáveis, já que a maioria dos episódios apresenta número de votos parecido e apenas uma pequena parcela ultrapassa esse limiar.
+
+
+
+# 2. Com o passar das temporadas a quantidade de votantes tende a cair?
+
+## 2.1. Hipótese
+Com o passar das temporadas a quantidade de vontantes tende a cair, pois quem não assitiu a primeira temporada não assistirá a segunda, o que reduz a audiência e consequentemente a quantidade de vontantes. 
+
+
+## 2.2. Análise
+
+Para responder a essa pergunta irei plotar o gráfico de distribuição da quantidade de votos por temporada, e também uma tabela com as médias da quantidade de votos por temporada.
+```{r}
+
+series = series %>% mutate(season = as.integer(season))
+series %>% 
+    ggplot(aes(x = season, y = user_votes)) + geom_point() + scale_x_continuous(breaks=c(1:34), labels=c(1:34))
+
+knitr::kable(summarise(series %>% group_by(season), media = mean(user_votes), cvar = (sd(user_votes) / mean(user_votes))))    
+```
+
+É possível notar que não há grande variação nas primeiras 10 temporadas, a média e a distribuição permanecem semelhantes. A partir da temporada 11 há uma grande queda. Isso se dá pelo fato de que existem poucas séries com mais de 10 temporadas, assim a quantidade de séries sendo avaliadas reduz drasticamente. No geral, podemos concluir que nas primeiras temporadas a quantidade de votantes não reduz como o esperado na hipótese. E sobre as temporadas acima da décima podemos concluir pouco pois a amostra é pequena. 
