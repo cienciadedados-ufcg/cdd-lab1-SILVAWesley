@@ -1,6 +1,7 @@
 ---
 output:
   title: "Whatever"
+  date: 2018-05-07
   html_notebook:
     toc: yes
     toc_float: yes
@@ -14,6 +15,7 @@ output:
 library(tidyverse)
 library(here)
 library(knitr)
+library(plotly)
 theme_set(theme_bw())
 ```
 # 1. Introdução

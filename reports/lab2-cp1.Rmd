@@ -1,0 +1,35 @@
+---
+title: "lab2-cp1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+library(plotly)
+```
+
+```{r}
+eps = read_csv(here("data/series_from_imdb.csv"),
+               progress = FALSE,
+               col_types = cols(.default = col_double(),
+               series_name = col_character(),
+               episode = col_character(), 
+               url = col_character(),
+               season = col_character()))
+
+selected_eps = eps %>% filter(series_name %in% c("Black Mirror", "Breaking Bad", "Stranger Things", "True Detective"))
+
+hc_chart = selected_eps %>%  hchart("line", hcaes(x = series_ep, y = user_rating, group = series_name, season))
+    
+hc_chart
+
+#my_plot = selected_eps %>% 
+#    ggplot(aes(x = series_ep, y = user_rating, color = season)) +
+#    labs(x = "Episódio", y = "Avaliação dos usuários") +
+#    geom_line() + facet_wrap(~ series_name, ncol = 1) +
+#    guides(color = guide_legend("Temporada")) +
+#    geom_point()
+
+#ggplotly(my_plot)
+```
