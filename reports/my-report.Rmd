@@ -1,6 +1,6 @@
 ---
 output:
-  title: "Whatever"
+  title: "Whatever" # É bem melhor um nome que tenha significado
   html_notebook:
     toc: yes
     toc_float: yes
@@ -29,13 +29,14 @@ eps = read_csv(here("data/series_from_imdb.csv"),
                url = col_character(),
                season = col_character()))
 
-print(colnames(eps))
+print(names(eps))
 ```
 
 O dataset tinha informações sobre as series listadas abaixo.
 
 ```{r}
-knitr::kable(unique(select(eps, series_name)), floating.environment="sidewaystable")
+kable(unique(select(eps, series_name)), floating.environment="sidewaystable")
+# quando fazemos knit pra gerar o html, essa tabela fica formatada estranha... 
 ```
 
 Destas, foram escolhidas 4 a serem usadas para responder as seguintes perguntas:
@@ -46,7 +47,7 @@ Destas, foram escolhidas 4 a serem usadas para responder as seguintes perguntas:
 As séries escolhidas foram:
 ```{r}
 selected_eps = eps %>% filter(series_name %in% c("Black Mirror", "Breaking Bad", "Stranger Things", "True Detective"))
-knitr::kable(unique(select(selected_eps, series_name)), floating.environment="sidewaystable")
+kable(unique(select(selected_eps, series_name)), floating.environment="sidewaystable")
 ```
 
 # 2. Overview dos dados
@@ -57,35 +58,52 @@ Esta sessão apresenta alguns dados gerais a respeito das séries selecionadas.
 
 Todo o conjunto de dados a ser analisado:
 ```{r}
-knitr::kable(select(selected_eps, series_name, season, series_ep, user_rating, user_votes), floating.environment="sidewaystable")
+kable(select(selected_eps, series_name, season, series_ep, user_rating, user_votes), floating.environment="sidewaystable")
 ```
 
 ## 2.2 Boxplots
 
 ```{r}
 selected_eps %>% 
-    ggplot(aes(x = season, y = user_rating, color = season)) + 
+    ggplot(aes(x = season, y = user_rating, color = series_name)) + 
     labs(x = "Temporada", y = "Avaliação dos usuários") +
     geom_boxplot(width = .3, outlier.color = NA) +
     geom_jitter(width = .1, size = 1, alpha = .5, color = "blue") +
-    facet_wrap(~ series_name, ncol = 1)
+    facet_wrap(~ series_name, ncol = 1) + 
+    theme(legend.position = "None")
 ```
 
 ## 2.2 Tabela de Dados Resumo
 
 Por Temporada:
 ```{r}
-summarise(selected_eps %>% group_by(series_name, season), mediana = median(user_rating), media = mean(user_rating), var = var(user_rating),
-                                    dp = sd(user_rating), cvar = (sd(user_rating) / mean(user_rating)), 
-                                    max = max(user_rating), min = min(user_rating))
+selected_eps %>%
+    group_by(series_name, season) %>%
+    summarise(
+        mediana = median(user_rating),
+        media = mean(user_rating),
+        var = var(user_rating),
+        dp = sd(user_rating),
+        cvar = dp / media,
+        max = max(user_rating),
+        min = min(user_rating)
+    )
 ```
 
 
 Por Série:
 ```{r}
-summarise(selected_eps %>% group_by(series_name), mediana = median(user_rating), media = mean(user_rating), var = var(user_rating),
-                                    dp = sd(user_rating), cvar = (sd(user_rating) / mean(user_rating)), 
-                                    max = max(user_rating), min = min(user_rating))
+selected_eps %>%
+    group_by(series_name) %>%
+    summarise(
+        mediana = median(user_rating),
+        media = mean(user_rating),
+        var = var(user_rating),
+        dp = sd(user_rating),
+        cvar = (sd(user_rating) / mean(user_rating)),
+        max = max(user_rating),
+        min = min(user_rating)
+    )
 ```
 
 ## 2.3 Notas por episódio
@@ -111,6 +129,8 @@ Observações que podem ser feitas a partir dos plots nas sessões 2.1, 2.2 e 2.
 
 * True Detective - Esta série tem uma história fechada por temporada. O que justifica a grande queda em notas da primeira para a segunda temporada. Tanto pelas médias das temporadas como pelo gráfico da sessão 2.3, podemos perceber o grande abismo entre as avaliações das duas temporadas.
 
+> Muito boa essa análise.
+
 # 3. Resposta da pergunta um
 
 * Qual das séries é mais bem avaliada no IMDB? 
@@ -124,6 +144,8 @@ print(arrangedMeanTable)
 
 Conclusão: A série mais bem avaliada é Breaking Bad. O coeficiente de variância é quase o dobro do de Stranger Things. Isso pode representar uma ameaça à representatividade da média, mas só há avaliação de uma temporada para esta, o que justifica o baixo coeficiente de variação. Todas as séries que apresentam mais de uma temporada acabam variando muito, pois novas temporadas implicam em novas histórias, personagens, elementos e novas dificuldades de produção.
 
+> A média esconde muita informação: qual o máximo? mínimo? há concentração em alguma faixa de valores? Tudo bem usar a média como parte do raciocínio, mas não deixe de usar visualizações mostrando todos os pontos para fazer uma comparação mais rica e mais válida. 
+
 * A diferença é grande? Pequena? 
 
 A maior diferença apresentada foi de:
@@ -135,6 +157,8 @@ print(max(select(arrangedMeanTable, media)) - min(select(arrangedMeanTable, medi
 ```
 
 Tendo em vista que a escala vai de 0 a 10. Isso, a princípio, representa pouca diferença. Mas, se tomarmos como base as notas gerais que são apresentadas pelas séries no IMDB, essa variação é bastante considerável. Como foi visto na sessão 2.2 (coluna min), nenhum episódio ganhou notas abaixo de 7, é difícil que isso ocorra entre as séries no IMDB. Portanto, é uma grande diferença. 
+
+> Vale o mesmo comentário de acima.
 
 * Muda de acordo com as temporadas da série?
 
@@ -156,6 +180,8 @@ arrangedCvarTable
 ```
 
 Conclusão: True Detective é a série com maior variação entre os episódios. O motivo disso encontra-se explicado na sessão 2.4.
+
+> Mesmo comentário de acima. Usa visualizações. Mostra todos os pontos. Aí você pode ter mais confiança no sumário. 
 
 * A diferença é grande? Pequena?
 
