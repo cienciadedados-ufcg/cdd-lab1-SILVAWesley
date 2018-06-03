@@ -8,6 +8,8 @@ output:
     df_print: paged
     toc: yes
     toc_float: yes
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r}
@@ -31,58 +33,77 @@ series = read_csv(here("data/series_from_imdb.csv"),
                                    season = col_character()))
 ```
 
-Os dados de votação de séries dos usuários do imdb, os quais o script acima captura, serão usados para responder a duas perguntas formuladas em sala de aula.
+Os dados de votaÃ§Ã£o de sÃ©ries dos usuÃ¡rios do imdb, os quais o script acima captura, serÃ£o usados para responder a duas perguntas formuladas em sala de aula.
 
-# 1. Existe correlação linear entre notas e quantidade de votantes?
+# 1. Existe correlaÃ§Ã£o linear entre notas e quantidade de votantes?
 
-## 1.1. Hipótese 
+## 1.1. HipÃ³tese 
 
-Existe uma correlação, não necessariamente linear, entre notas e quantidade de votantes, pois quanto menos votantes menos conhecida é a série, por ser menos conhecida, quem tem motivação de votar acaba gostando da série.
+Existe uma correlaÃ§Ã£o negaiva, e nÃ£o necessariamente linear, entre notas e quantidade de votantes de um episÃ³dio, pois quanto menos votantes menos conhecida Ã© a sÃ©rie, por ser menos conhecida, quem tem motivaÃ§Ã£o de votar acaba gostando da sÃ©rie.
 
-## 1.2. Análise
+## 1.2. AnÃ¡lise
 
-O script abaixo calcula a correlação linear entre a coluna user_votes (Referente a quantidade de votos de usuários) e a coluna user_rating (Referente a média da nota das avaliações) de cada episódio presente no dataframe.Utilizei 3 métodos: Spearman, pearson e kendall, nessa ordem.
+O script abaixo calcula a correlaÃ§Ã£o linear entre a coluna user_votes (Referente a quantidade de votos de usuÃ¡rios) e a coluna user_rating (Referente a mÃ©dia da nota das avaliaÃ§Ãµes) de cada episÃ³dio presente no dataframe.
+
+A correlaÃ§Ã£o linear de mede a relaÃ§Ã£o estatÃ­stica (causal ou nÃ£o) entre duas variÃ¡veis, seu valor varia entre -1 e 1 onde
+* -1 : relaÃ§Ã£o linear perfeita e negativa
+* 0 : ausÃªncia de relaÃ§Ã£o linear
+* 1 : relaÃ§Ã£o linear perfeita e positiva
+
+Existem vÃ¡rios mÃ©todos de calcular a correlaÃ§Ã£o, tais como: Sperarman, Pearson e Kendall. Visto que estamos interessados em observar a correlaÃ§Ã£o linear, usaremos o metodo pearson.
 
 ```{r}
-cor(series$user_votes, series$user_rating, method="spearman")
 cor(series$user_votes, series$user_rating, method="pearson")
-cor(series$user_votes, series$user_rating, method="kendall")
 ```
 
-Pelo que podemos ver a correlação linear mais significativa é a de spearman que ainda assim configura uma correlação baixa. Para entender melhor a correlação irei plotar o gráfico de dispersão das duas variáveis.
+Podemos ver que a correlaÃ§Ã£o entre o nÃºmero de votos e a nota de um episÃ³dio Ã© fraca e positiva. Para entender melhor a correlaÃ§Ã£o irei plotar o grÃ¡fico de dispersÃ£o das duas variÃ¡veis.
 
 ```{r}
 ggplot(series, aes(x=user_rating, y=user_votes)) + geom_point()
-
 ```
 
-Como é possível observar, há alguns poucos pontos muito acima do normal em user_votes. Irei limitar o eixo y para 50000 votos. Assim, teremos um gráfico que pode ser melhor analisado.
+Como Ã© possÃ­vel observar, hÃ¡ alguns poucos pontos muito acima do normal em user_votes. Irei limitar o eixo y para 50000 votos. Assim, teremos um grÃ¡fico que pode ser melhor analisado.
 
 
 ```{r}
-ggplot(series, aes(x=user_rating, y=user_votes)) + geom_point() + coord_cartesian(ylim = c(0, 50000)) 
+ggplot(series, aes(x=user_rating, y=user_votes)) + geom_point() + coord_cartesian(ylim = c(0, 50000))
 ```
 
-Podemos ver que a maior parte dos episódios apresenta quantidade de vontantes abaixo de 10000. E não necessariamente é verdade que séries com poucos votos são melhor votadas. É mais fácil de acontecer o contrário, episódios muito votados apresentarem notas melhores. Isso explica porque nenhum dos 3 coeficientes deu valor negativo. Também podemos observar que a correlação é, no máximo, moderada entre as duas variáveis, já que a maioria dos episódios apresenta número de votos parecido e apenas uma pequena parcela ultrapassa esse limiar.
+Podemos ver que a maior parte dos episÃ³dios apresenta quantidade de vontantes abaixo de 10000. E nÃ£o necessariamente Ã© verdade que sÃ©ries com poucos votos sÃ£o melhor votadas. Ã‰ mais fÃ¡cil de acontecer o contrÃ¡rio, episÃ³dios muito votados apresentarem notas melhores. Isso explica porque o coeficiente de correlaÃ§Ã£o linear nÃ£o deu valor negativo. 
 
+TambÃ©m podemos observar que a correlaÃ§ao Ã©, no mÃ¡ximo, moderada entre as duas variÃ¡veis, jÃ¡ que a maioria dos episÃ³dios apresenta nÃºmero de votos parecido e apenas uma pequena parcela ultrapassa esse limiar.
 
 
 # 2. Com o passar das temporadas a quantidade de votantes tende a cair?
 
-## 2.1. Hipótese
-Com o passar das temporadas a quantidade de vontantes tende a cair, pois quem não assitiu a primeira temporada não assistirá a segunda, o que reduz a audiência e consequentemente a quantidade de vontantes. 
+## 2.1. HipÃ³tese
+Com o passar das temporadas a quantidade de vontantes tende a cair, pois quem nÃ£o assitiu a primeira temporada nÃ¡o assistirÃ¡ a segunda, o que reduz a audiÃªncia e consequentemente a quantidade de vontantes. 
 
+## 2.2. AnÃ¡lise
 
-## 2.2. Análise
+Para responder a essa pergunta irei plotar o grÃ¡fico de distribuiÃ§Ã£o da quantidade de votos por temporada, e tambÃ©m uma tabela com as mÃ©dias da quantidade de votos por temporada.
 
-Para responder a essa pergunta irei plotar o gráfico de distribuição da quantidade de votos por temporada, e também uma tabela com as médias da quantidade de votos por temporada.
 ```{r}
 
 series = series %>% mutate(season = as.integer(season))
 series %>% 
     ggplot(aes(x = season, y = user_votes)) + geom_point() + scale_x_continuous(breaks=c(1:34), labels=c(1:34))
 
-knitr::kable(summarise(series %>% group_by(season), media = mean(user_votes), cvar = (sd(user_votes) / mean(user_votes))))    
+knitr::kable(summarise(series %>% group_by(season), media = round(mean(user_votes), 2), cvar = round((sd(user_votes) / mean(user_votes)), 2)), col.names = c("Temporada", "MÃ©dia", "Coeficiente de VariaÃ§Ã£o"))
 ```
 
-É possível notar que não há grande variação nas primeiras 10 temporadas, a média e a distribuição permanecem semelhantes. A partir da temporada 11 há uma grande queda. Isso se dá pelo fato de que existem poucas séries com mais de 10 temporadas, assim a quantidade de séries sendo avaliadas reduz drasticamente. No geral, podemos concluir que nas primeiras temporadas a quantidade de votantes não reduz como o esperado na hipótese. E sobre as temporadas acima da décima podemos concluir pouco pois a amostra é pequena. 
+Ã‰ possÃ­vel notar que nÃ£o hÃ¡ grande variaÃ§Ã£o nas primeiras 10 temporadas, a mÃ©dia e a distribuiÃ§Ã£o permanecem semelhantes. A partir da temporada 11 hÃ¡ uma grande queda. Isso se dÃ¡ pelo fato de que existem poucas sÃ©ries com mais de 10 temporadas, assim a quantidade de sÃ©ries sendo avaliadas reduz drasticamente. No geral, podemos concluir que nas primeiras temporadas a quantidade de votantes nÃ£o reduz como o esperado na hipÃ³tese. E sobre as temporadas acima da dÃ©cima podemos concluir pouco pois a amostra Ã© pequena. 
+
+Sabendo disto observaremos agora apenas as sÃ©ries que tem exatamente 10 temporadas, para que possamos ver uma comparaÃ§Ã£o mais justa entre as temporadas.
+
+```{r}
+series %>% 
+    group_by(series_name) %>%
+    filter(max(season) == 10) %>%
+    ungroup() %>%
+    ggplot(aes(x = season, y = user_votes)) + 
+    geom_bar(stat = "identity") +
+    scale_x_continuous(breaks=c(1:10), labels=c(1:10))
+
+```
+
